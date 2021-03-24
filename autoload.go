@@ -6,6 +6,7 @@ import (
 	"github.com/rocketlaunchr/dataframe-go/imports"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type AutoLoader struct {
@@ -24,16 +25,24 @@ func (al *AutoLoader) Run(dir string) error {
 			return errors.Wrapf(err, "failed to open file: %s", filePath)
 		}
 
-		df, err := imports.LoadFromCSV(context.Background(), file, imports.CSVLoadOptions{})
+		df, err := imports.LoadFromCSV(context.Background(), file, imports.CSVLoadOptions{LargeDataSet: true, InferDataTypes: true})
 		if err != nil {
 			return errors.Wrapf(err, "failed to parse csv: %s", filePath)
 		}
 
 		al.DataFrames = append(al.DataFrames, DataFrameEntry{
-			Name:      file.Name(),
+			Name:      fixFileName(file.Name()),
 			DataFrame: df,
 		})
 	}
 
 	return nil
+}
+
+func fixFileName(in string) (out string) {
+	lastSlash := strings.LastIndex(in, "/")
+	out = in[lastSlash+1:]
+	lastDot := strings.LastIndex(out, ".")
+	out = out[:lastDot]
+	return
 }
